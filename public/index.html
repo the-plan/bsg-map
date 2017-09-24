@@ -6,11 +6,10 @@
     <title>WebApp</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!--
+    
     <style>
     .container
     {
-      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -39,22 +38,15 @@
       padding-top: 15px;
     }
     </style>
-  -->
+  
   </head>
   <body>
-    <div id="cows"></div>
-    <!--
     <section class="container">
-      <div>
-        <h1 class="title">
-          WebApp
-        </h1>
-        <h2 class="subtitle">
-          WebApp by org.typeunsafe
-        </h2>
-      </div>
+      <h2 class="subtitle">The Plan</h2>
     </section>
-    -->
+    <section class="container">
+      <div id="cows"></div>
+    </section>
 
     <script src="js/jquery-3.2.1.min.js"></script>
     <script src="js/raphael.min.js"></script>
@@ -72,15 +64,23 @@
         this.size = size;
         
         //var color = sex=="male" ? '#0099FF':'#FF99FF';
-        var color = color == null ? '#0099FF' : color
+        this.color = color == null ? '#0099FF' : `#${color}`
 
-        this.circle = paper.circle(x, y, size).attr({fill: color});
+        this.circle = paper.circle(x, y, size).attr({fill: this.color});
         this.legend = paper.text(x, y+12, name).attr({fill: '#000000'});
       
-        this.move = function() {
+        this.move = function(color) {
           this.circle.animate({r: this.size});
           this.circle.translate(this.xVelocity, this.yVelocity);
           this.legend.translate(this.xVelocity, this.yVelocity);
+
+          if(this.xVelocity==0 && this.yVelocity==0) {
+            this.color = '#FFFFFF';
+          } else {
+            this.color = `#${color}`
+          }
+          this.circle.attr({fill: this.color});
+
         }
         
         this.remove = function() {
@@ -94,19 +94,19 @@
         var width = 600;
         var height = 600;
         var elem = document.getElementById("cows");
-        elem.innerHTML = "<div id='cows-canvas' style='margin: auto; background: white; width:" + width + "px; height:" + height + "px;'></div>";
+        elem.innerHTML = "<div id='cows-canvas' style='border-style: dotted;border-width: 1px; border-radius: 5px; margin: auto; background: white; width:" + width + "px; height:" + height + "px;'></div>";
         var paper = Raphael("cows-canvas", width, height);
             
-        var raidersArmy = []
+        window.raidersArmy = []
         
         $.get("/raiders").then((data) => {
-          //console.log(data);
+          console.log(data);
           data.raiders.forEach((raider) => {
 
             raidersArmy.push(
               new Raider(
                 raider.name, 
-                null, // raider.color
+                raider.metadata.basestar.color, // raider.color
                 raider.metadata.coordinates.x, 
                 raider.metadata.coordinates.y, 
                 5, // raider.size
@@ -116,6 +116,9 @@
           
           setInterval(() => {
             $.get("/raiders").then(function(data) {
+
+              console.log(data)
+
               var raiderOnTheMap = null;
               data.raiders.forEach(function(raider) {
                 // search the raider on the mao
@@ -124,14 +127,18 @@
                   raiderOnTheMap.xVelocity = raider.metadata.coordinates.xVelocity;
                   raiderOnTheMap.yVelocity = raider.metadata.coordinates.yVelocity;
                   //raiderOnTheMap.size = raider.size;
-                  raiderOnTheMap.move();
+                  //raiderOnTheMap.color = `#${raider.metadata.basestar.color}`;
+
+                  //console.log(raiderOnTheMap)
+
+                  raiderOnTheMap.move(raider.metadata.basestar.color);
                 } else { // there is a new raider!!!
                   
                   //TODO: change the color with the basestar
                   // raider.metadata.basestar
                   raiderOnTheMap = new Raider(
                     raider.name, 
-                    null,
+                    raider.metadata.basestar.color,
                     raider.metadata.coordinates.x, 
                     raider.metadata.coordinates.y, 
                     5,

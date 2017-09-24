@@ -13,8 +13,8 @@ app.use(express.static('public'));
 
 app.get('/raiders', (req, res) => {
   //http://localhost:8080/api/raiders
-  fetch(`http://localhost:8080/api/raiders`, {
-    method:'GET', headers: {"Content-Type": "application/json"}
+  fetch(`${process.env.RAIDERS_SERVICE}`, {
+    method:'GET', headers: {"Content-Type": "application/json;charset=UTF-8"}
   })
   .then(response => {
     return response.json();
