@@ -44,66 +44,64 @@ window.onload = function () {
     let paper = Raphael("bsg-map-canvas", width, height);
 
     window.raidersArmy = [];
+    let source = new EventSource("http://localhost:8080/api/raiders");
 
-    let eb = new EventBus("http://localhost:8080/eventbus");
-    eb.onopen = function () {
-        eb.registerHandler("raiders", function (err, msg) {
-            if(raidersArmy.length === 0) {
-                JSON.parse(msg.body).forEach((raider) => {
+    source.onmessage = function(event) {
+        if(raidersArmy.length === 0) {
+            JSON.parse(event.data).forEach((raider) => {
 
-                    raidersArmy.push(
-                        new Raider(
-                            raider.name,
-                            raider.metadata.basestar.color, // raider.color
-                            raider.metadata.coordinates.x,
-                            raider.metadata.coordinates.y,
-                            5, // raider.size
-                            paper)
+                raidersArmy.push(
+                    new Raider(
+                        raider.name,
+                        raider.metadata.basestar.color, // raider.color
+                        raider.metadata.coordinates.x,
+                        raider.metadata.coordinates.y,
+                        5, // raider.size
+                        paper)
+                );
+
+
+
+            });
+        }
+        else{
+            let raiderOnTheMap = null;
+            JSON.parse(event.data).forEach((raider) => {
+                // search the raider on the mao
+                raiderOnTheMap = raidersArmy.filter(function (raiderOnTheMap) {
+                    return raiderOnTheMap.name === raider.name;
+                })[0];
+                if (raiderOnTheMap) {
+                    raiderOnTheMap.xVelocity = raider.metadata.coordinates.xVelocity;
+                    raiderOnTheMap.yVelocity = raider.metadata.coordinates.yVelocity;
+                    //raiderOnTheMap.size = raider.size;
+                    //raiderOnTheMap.color = `#${raider.metadata.basestar.color}`;
+
+                    //console.log(raiderOnTheMap)
+
+                    raiderOnTheMap.move(raider.metadata.basestar.color);
+                } else { // there is a new raider!!!
+
+                    //TODO: change the color with the basestar
+                    // raider.metadata.basestar
+                    raiderOnTheMap = new Raider(
+                        raider.name,
+                        raider.metadata.basestar.color,
+                        raider.metadata.coordinates.x,
+                        raider.metadata.coordinates.y,
+                        5,
+                        paper
                     );
 
+                    console.log(raiderOnTheMap);
 
-
-                });
-            }
-            else{
-                let raiderOnTheMap = null;
-                JSON.parse(msg.body).forEach((raider) => {
-                    // search the raider on the mao
-                    raiderOnTheMap = raidersArmy.filter(function (raiderOnTheMap) {
-                        return raiderOnTheMap.name === raider.name;
-                    })[0];
-                    if (raiderOnTheMap) {
-                        raiderOnTheMap.xVelocity = raider.metadata.coordinates.xVelocity;
-                        raiderOnTheMap.yVelocity = raider.metadata.coordinates.yVelocity;
-                        //raiderOnTheMap.size = raider.size;
-                        //raiderOnTheMap.color = `#${raider.metadata.basestar.color}`;
-
-                        //console.log(raiderOnTheMap)
-
-                        raiderOnTheMap.move(raider.metadata.basestar.color);
-                    } else { // there is a new raider!!!
-
-                        //TODO: change the color with the basestar
-                        // raider.metadata.basestar
-                        raiderOnTheMap = new Raider(
-                            raider.name,
-                            raider.metadata.basestar.color,
-                            raider.metadata.coordinates.x,
-                            raider.metadata.coordinates.y,
-                            5,
-                            paper
-                        );
-
-                        console.log(raiderOnTheMap);
-
-                        raidersArmy.push(raiderOnTheMap);
-                        raiderOnTheMap.xVelocity = raider.metadata.coordinates.xVelocity;
-                        raiderOnTheMap.yVelocity = raider.metadata.coordinates.yVelocity;
-                        raiderOnTheMap.size = 5;
-                        raiderOnTheMap.move();
-                    }
-                });
-            }
-        })
-    }
+                    raidersArmy.push(raiderOnTheMap);
+                    raiderOnTheMap.xVelocity = raider.metadata.coordinates.xVelocity;
+                    raiderOnTheMap.yVelocity = raider.metadata.coordinates.yVelocity;
+                    raiderOnTheMap.size = 5;
+                    raiderOnTheMap.move();
+                }
+            });
+        }
+    };
 }
